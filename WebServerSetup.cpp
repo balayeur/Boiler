@@ -130,7 +130,7 @@ void handleHTTPResponse(int httpResponseCode) {
     Serial.print("Error sending request! HTTP Error code: ");
     Serial.println(httpResponseCode);
     // Записываем сообщение об ошибке в журнал
-    logData("Failed to send request");
+    // logData("Failed to send request");
   }
 }
 
