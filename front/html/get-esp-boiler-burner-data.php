@@ -18,7 +18,7 @@ $api_key= $sensor = $location = $value1 = $value2 = $value3 = "";
 
 if ($_SERVER["REQUEST_METHOD"] == "GET") {
     $api_key = test_input($_GET["api_key"]);
-    if("tPmAT5Ab3j7F9" == $api_key_value) {
+    if($api_key == $api_key_value) {
         $burner = test_input($_GET["burner"]);
         
         // Create connection
