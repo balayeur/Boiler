@@ -29,6 +29,20 @@ void setupWebServer() {
     request->send(200, "text/plain", response.c_str());
   });
 
+
+  server.on("/setSchedule", HTTP_POST, [](AsyncWebServerRequest *request){
+    String startTime = request->getParam("startTime", true)->value();
+    String endTime = request->getParam("endTime", true)->value();
+    int minTemp = request->getParam("minTemp", true)->value().toInt();
+    int maxTemp = request->getParam("maxTemp", true)->value().toInt();
+
+    // Сохраните расписание и температуры в переменные или EEPROM
+
+    request->send(200, "text/plain", "Schedule set");
+  });
+
+  server.begin();
+
   // Start server
   server.begin();
 }

@@ -90,6 +90,9 @@ volatile bool signalPresent = false;           // Флаг для отслежи
 volatile unsigned long lastInterruptTime = 0;  // Переменная для хранения времени последнего прерывания
 const unsigned long timeout = 1000;            // Время в миллисекундах, после которого считаем, что сигнал исчез
 
+const int relayPin = 5;  // Пин для управления реле
+
+
 void ICACHE_RAM_ATTR handleInterrupt() {  
   signalPresent = true;          // Устанавливаем флаг, что сигнал присутствует
   lastInterruptTime = millis();  // Сохраняем время последнего прерывания
@@ -119,6 +122,9 @@ void ICACHE_RAM_ATTR handleInterrupt() {
 void setup() {
   pinMode(LED_BUILTIN, OUTPUT);  // Initialize the LED_BUILTIN pin as an output, led ON
   pinMode(LED_02_PIN, OUTPUT);  // led ON
+
+  pinMode(relayPin, OUTPUT);
+  digitalWrite(relayPin, LOW);  // Выключаем реле по умолчанию
 
   // pinMode(A0, INPUT);
   // pinMode(ADC_PIN, INPUT);
@@ -179,6 +185,15 @@ void setup() {
   digitalWrite(LED_02_PIN, HIGH); // Turn the LED off 
 
 }
+
+void controlBurner(bool state) {
+  if (state) {
+    digitalWrite(relayPin, HIGH);  // Включаем реле
+  } else {
+    digitalWrite(relayPin, LOW);   // Выключаем реле
+  }
+}
+
 
 void loop() {
 
