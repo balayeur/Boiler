@@ -15,6 +15,12 @@
 #include "WebServerSetup.h"
 
 
+
+// Определяем текущую среду
+#define TEST_ENV // Закомментируйте эту строку для рабочей среды
+
+
+
 // Number of temperature devices found
 int numberOfDevices;
 
@@ -62,9 +68,19 @@ const char* password = "88itss8iwz93gqsk4hjt";
 // const char* serverAddress = "148.179.79.9";  // Адрес вашего сервера
 const char* serverAddress = "192.168.1.99";       // Home raspberry pi
 
+// Основные endpoint
+const char* endpointTempMain = "/get-esp-boiler-temperature-data.php";
+const char* endpointBurnerMain = "/get-esp-boiler-burner-data.php";
+// Тестовые endpoint
+const char* endpointTempTest = "/Boiler/test-get-esp-boiler-temperature-data.php";
+const char* endpointBurnerTest = "/Boiler/test-get-esp-boiler-burner-data.php";
+// Переменные для выбранных endpoint
+const char* endpointTemp;
+const char* endpointBurner;
+
 const int serverPort = 80;                                            // Порт HTTP сервера
-const char* endpointTemp =   "/get-esp-boiler-temperature-data.php";  // API endpoint на сервере
-const char* endpointBurner = "/get-esp-boiler-burner-data.php";       // API endpoint на сервере
+// const char* endpointTemp =   "/get-esp-boiler-temperature-data.php";  // API endpoint на сервере
+// const char* endpointBurner = "/get-esp-boiler-burner-data.php";       // API endpoint на сервере
 
 
 // int cnt = 0;
@@ -112,8 +128,25 @@ void setup() {
   Serial.begin(115200);
   Serial.println();
 
-  setupDevices();
 
+#ifdef TEST_ENV
+    Serial.println("Работа в тестовой среде.");
+    endpointTemp = endpointTempTest;
+    endpointBurner = endpointBurnerTest;
+#else
+    Serial.println("Работа в рабочей среде.");
+    endpointTemp = endpointTempMain;
+    endpointBurner = endpointBurnerMain;
+#endif
+
+    // Выводим выбранные endpoint
+    Serial.print("Используется endpointTemp: ");
+    Serial.println(endpointTemp);
+    Serial.print("Используется endpointBurner: ");
+    Serial.println(endpointBurner);
+
+
+  setupDevices();
 
   pinMode(BURNER_IN_PIN, INPUT);
   // Настраиваем вход с подтягивающим резистором
