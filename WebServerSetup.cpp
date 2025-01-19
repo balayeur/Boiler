@@ -1,4 +1,5 @@
 #include "WebServerSetup.h"
+// #include "ScheduleManager.h"
 
 // Create AsyncWebServer object on port 80
 AsyncWebServer server(80);
@@ -40,6 +41,12 @@ void setupWebServer() {
 
     request->send(200, "text/plain", "Schedule set");
   });
+
+  // server.on("/", HTTP_GET, [](AsyncWebServerRequest *request) {
+  //   request->send(LittleFS, "/index.html", "text/html");
+  // });
+  server.on("/schedule", HTTP_GET, handleGetSchedule);
+  server.on("/schedule", HTTP_POST, handleUpdateSchedule);
 
   server.begin();
 
