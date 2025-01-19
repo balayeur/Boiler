@@ -14,6 +14,7 @@
 #include <ESPAsyncWebServer.h>
 #include <ESP8266HTTPClient.h>
 #include "WebPage.h"
+#include "ScheduleManager.h"
 // #include "log.h"
 // #include <ESPAsyncTCP.h>
 

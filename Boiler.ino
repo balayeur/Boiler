@@ -13,12 +13,12 @@
 #include "DeviceSetup.h"
 #include "SensorFunctions.h"
 #include "WebServerSetup.h"
+#include "ScheduleManager.h"
 
 
 
 // Определяем текущую среду
 #define TEST_ENV // Закомментируйте эту строку для рабочей среды
-
 
 
 // Number of temperature devices found
@@ -123,7 +123,7 @@ void setup() {
   pinMode(LED_BUILTIN, OUTPUT);  // Initialize the LED_BUILTIN pin as an output, led ON
   pinMode(LED_02_PIN, OUTPUT);  // led ON
 
-  pinMode(relayPin, OUTPUT);
+  pinMode(relayPin, OUTPUT);    // Устанавливаем пин для управления реле
   digitalWrite(relayPin, LOW);  // Выключаем реле по умолчанию
 
   // pinMode(A0, INPUT);
@@ -134,6 +134,12 @@ void setup() {
   Serial.begin(115200);
   Serial.println();
 
+  if (!LittleFS.begin()) {
+    Serial.println("Ошибка монтирования LittleFS");
+    return;
+  }
+
+  loadSchedule();
 
 #ifdef TEST_ENV
     Serial.println("Работа в тестовой среде.");
@@ -175,12 +181,29 @@ void setup() {
 
   // Print ESP Local IP Address
   Serial.print("IP address: ");
-  Serial.println(WiFi.localIP());
+  // Serial.println(WiFi.localIP());
+   Serial.println(WiFi.localIP().toString());
   // printf("IP address: %s\n", WiFi.localIP().toString().c_str());
 
 
+  // Initiate the time library
+  const char* ntpServer = "pool.ntp.org";
+  const long gmtOffset_sec = 0;
+  const int daylightOffset_sec = 3600;
+  configTime(gmtOffset_sec, daylightOffset_sec, ntpServer);
+  struct tm timeinfo;
+  if (!getLocalTime(&timeinfo)) {
+    Serial.println("Failed to obtain time");
+    return;
+  }
+
+  char timeStringBuff[50]; // Буфер для форматированной строки времени
+  strftime(timeStringBuff, sizeof(timeStringBuff), "Time synchronized: %A, %B %d %Y %H:%M:%S", &timeinfo);
+  Serial.println(timeStringBuff); // Вывод форматированной строки времени
+
   setupWebServer();
 
+  //
   digitalWrite(LED_BUILTIN, HIGH); // Turn the LED off 
   digitalWrite(LED_02_PIN, HIGH); // Turn the LED off 
 
@@ -197,11 +220,11 @@ void controlBurner(bool state) {
 
 void loop() {
 
-  unsigned long current_time = millis();
-
+  unsigned long current_time = millis(); // Get current time
+ 
   if ((current_time - lastTime_burnerState) > timer_burnerState) {
     // Serial.println(" ****************** ");
-
+/* 
     // int sensorValue = analogRead(sensorPin);  // Lecture de la valeur analogique
     // current = getCurrent(sensorValue);
     // bool curBurnerState = getBurnerState(current);
@@ -240,7 +263,7 @@ void loop() {
     // } else {
     //   Serial.println("PWM signal is absent");
     // }
-
+ */
 
     
     // Проверяем, прошло ли время с последнего прерывания
@@ -294,7 +317,7 @@ void loop() {
 
     // Serial.println(" ----------------- ");
 
-    lastTime_burnerState = millis();
+    lastTime_burnerState = millis(); // Update lastTime
   }
 
 
@@ -321,5 +344,32 @@ void loop() {
     digitalWrite(LED_BUILTIN, HIGH);  // Turn the LED off by making the voltage HIGH
 
     lastTime_temperature = millis();
+
+
+    time_t now = time(nullptr);
+    struct tm* timeinfo = localtime(&now);
+    int currentHour = timeinfo->tm_hour;
+    int currentMinute = timeinfo->tm_min;
+    Serial.printf("Current time: %02d:%02d\n", currentHour, currentMinute);
+    Serial.printf("Current temperature: %s\n", tempCuve.c_str());
+
+    float currentTemperature = sensors.getTempCByIndex(2);
+    bool relayOn = false;
+    for (int i = 0; i < scheduleCount; i++) {
+      if (isInTimeRange(schedule[i], currentHour, currentMinute)) {
+        if (currentTemperature < schedule[i].minTemp) {
+          relayOn = true;
+          Serial.printf("currentTemperature=%f", currentTemperature);
+          Serial.printf("Current temperature is below minimum: %f\n", schedule[i].minTemp);
+        }
+        if (currentTemperature > schedule[i].maxTemp) {
+          relayOn = false;
+          Serial.printf("currentTemperature=%f", currentTemperature);
+          Serial.printf("Current temperature is above maximum: %f\n", schedule[i].maxTemp);
+        }
+      }
+    }
+    digitalWrite(relayPin, relayOn ? HIGH : LOW);
+
   }
 }
