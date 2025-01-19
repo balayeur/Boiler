@@ -32,12 +32,11 @@ extern bool burnerState;
 //local
 
 
-
-String processor(const String& var);
+String processor(const String& var); // Function to replace placeholder with variable content
 
 void setupWebServer();
 
-float getTempOut();
+float getTempOut(); // Get the temperature from OpenWeatherMap
 
 void sendGetRequest(String url);
 void sendPostRequest(String url);

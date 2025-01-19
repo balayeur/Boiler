@@ -190,20 +190,24 @@ void setup() {
   const char* ntpServer = "pool.ntp.org";
   const long gmtOffset_sec = 0;
   const int daylightOffset_sec = 3600;
-  configTime(gmtOffset_sec, daylightOffset_sec, ntpServer);
+  configTime(gmtOffset_sec, daylightOffset_sec, ntpServer); // Устанавливаем время с NTP сервера 
+ 
   struct tm timeinfo;
-  if (!getLocalTime(&timeinfo)) {
+  if (!getLocalTime(&timeinfo)) { // Получаем время
     Serial.println("Failed to obtain time");
     return;
   }
 
   char timeStringBuff[50]; // Буфер для форматированной строки времени
-  strftime(timeStringBuff, sizeof(timeStringBuff), "Time synchronized: %A, %B %d %Y %H:%M:%S", &timeinfo);
+  strftime(timeStringBuff, sizeof(timeStringBuff),
+           "Time synchronized: %A, %B %d %Y %H:%M:%S",
+           &timeinfo); // Форматируем время
   Serial.println(timeStringBuff); // Вывод форматированной строки времени
 
-  setupWebServer();
+  
+  setupWebServer(); // Запускаем веб-сервер
 
-  //
+  
   digitalWrite(LED_BUILTIN, HIGH); // Turn the LED off 
   digitalWrite(LED_02_PIN, HIGH); // Turn the LED off 
 

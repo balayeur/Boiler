@@ -36,6 +36,6 @@ bool isInTimeRange(Schedule sched, int hour, int minute);
 void handleGetSchedule(AsyncWebServerRequest *request);
 
 // Обработка API обновления расписания
-void handleUpdateSchedule(AsyncWebServerRequest *request);
+void handleUpdateSchedule(AsyncWebServerRequest *request, uint8_t *data, size_t len, size_t index, size_t total);
 
 #endif  // SCHEDULE_MANAGER_H

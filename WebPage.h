@@ -140,6 +140,9 @@ const char index_html[] PROGMEM = R"rawliteral(
     <span id="burnerStateText">Burner State</span>
   </div>
 
+  <h1>Boiler Control</h1>
+  <p><a href="/scheduler">Go to Scheduler</a></p>
+
 
   <!-- Chart canvase -->
   <canvas id="temperatureChart" width="400" height="200"></canvas>

@@ -75,8 +75,8 @@
         row.innerHTML = `
           <td><input type="time" value="${formatTime(item.startHour, item.startMinute)}"></td>
           <td><input type="time" value="${formatTime(item.endHour, item.endMinute)}"></td>
-          <td><input type="number" step="0.1" value="${item.minTemp}" placeholder="Мин. Темп."></td>
-          <td><input type="number" step="0.1" value="${item.maxTemp}" placeholder="Макс. Темп."></td>
+          <td><input type="number" step="5" value="${item.minTemp}" placeholder="Мин. Темп."></td>
+          <td><input type="number" step="5" value="${item.maxTemp}" placeholder="Макс. Темп."></td>
           <td><button onclick="deleteRow(${index})">Удалить</button></td>
         `;
         tableBody.appendChild(row);
@@ -105,6 +105,7 @@
     function deleteRow(index) {
       schedule.splice(index, 1);
       renderTable();
+      saveSchedule();
     }
 
     // Сохранение расписания на сервере
@@ -127,7 +128,10 @@
       });
 
       try {
-        const response = await fetch('/schedule', {
+        console.log('Sending schedule:', schedule); // Отладочное сообщение
+        console.log(JSON.stringify(schedule)); // Отладочное сообщение
+        
+        const response = await fetch('/scheduleSet', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
