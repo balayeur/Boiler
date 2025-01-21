@@ -14,12 +14,14 @@
 #include "SensorFunctions.h"
 #include "WebServerSetup.h"
 #include "ScheduleManager.h"
+#include "Function.h"
 
-
+// #include <Ticker.h>
+// Ticker temperatureTicker;
+// Ticker burnerStateTicker;
 
 // Определяем текущую среду
 #define TEST_ENV // Закомментируйте эту строку для рабочей среды
-
 
 // Number of temperature devices found
 int numberOfDevices;
@@ -36,14 +38,14 @@ String tempCuve = "";
 // const float sensitivity = 185.0;  // Sensibilité du capteur (en mV/A)
 // const float offsetSensor = 785;
 // float current = 0.0;
-// bool burnerState = false;
+// bool lastSignalPresent = false;
 
 // Timer variables
-unsigned long lastTime_temperature = 0;
-unsigned long timer_temperature = 1000 * 60;
+unsigned long lastTemperatureUpdateTime = 0;
+unsigned long timer_temperature         = 1000 * 60;
 // ADC timer
-unsigned long lastTime_burnerState = 0;
-unsigned long timer_burnerState = 1000;
+unsigned long lastBurnerStateCheckTime = 0;
+unsigned long burnerStateCheckInterval = 1000;
 
 // Replace with your network credentials
 // const char* ssid = "AAS";
@@ -65,7 +67,7 @@ const char* password = "88itss8iwz93gqsk4hjt";
 // String apiKeyValue = "tPmAT5Ab3j7F9";
 
 // const char* serverAddress = "148.179.79.129";  // Адрес вашего сервера
-// const char* serverAddress = "148.179.79.9";  // Адрес вашего сервера
+// const char* serverAddress = "148.179.79.9";    // Адрес вашего сервера
 const char* serverAddress = "192.168.1.99";       // Home raspberry pi
 
 // Основные endpoint
@@ -85,17 +87,18 @@ const int serverPort = 80;                                            // Пор�
 
 // int cnt = 0;
 // int maxCnt = 0;
-bool burnerState = false;
-volatile bool signalPresent = false;           // Флаг для отслеживания присутствия сигнала
-volatile unsigned long lastInterruptTime = 0;  // Переменная для хранения времени последнего прерывания
-const unsigned long timeout = 1000;            // Время в миллисекундах, после которого считаем, что сигнал исчез
+bool lastSignalPresent = false;                 // Переменная для хранения предыдущего состояния сигнала
+volatile bool signalPresent = false;            // Флаг для отслеживания присутствия сигнала
+volatile unsigned long lastInterruptTime = 0;   // Переменная для хранения времени последнего прерывания
+const unsigned long timeout = 1000;             // Время в миллисекундах, после которого считаем, что сигнал исчез
 
-const int relayPin = 5;  // Пин для управления реле
+bool burnerStatePlanned = false;  // Планируемое состояние горелки
+const int relayPin = 5;           // Пин для управления реле горелки 
 
 
-void ICACHE_RAM_ATTR handleInterrupt() {  
-  signalPresent = true;          // Устанавливаем флаг, что сигнал присутствует
-  lastInterruptTime = millis();  // Сохраняем время последнего прерывания
+void ICACHE_RAM_ATTR handleInterrupt() {  // Обработчик прерывания
+  signalPresent = true;                   // Устанавливаем флаг, что сигнал присутствует
+  lastInterruptTime = millis();           // Сохраняем время последнего прерывания
   
   // Serial.print("handleInterrupt() - ");
   // Serial.print(lastInterruptTime);
@@ -116,6 +119,8 @@ void ICACHE_RAM_ATTR handleInterrupt() {
   //   Serial.println("PWM signal is absent");
   // }
 }
+
+
 
 
 // SETUP ----------------------------------------------------------
@@ -211,6 +216,11 @@ void setup() {
   digitalWrite(LED_BUILTIN, HIGH); // Turn the LED off 
   digitalWrite(LED_02_PIN, HIGH); // Turn the LED off 
 
+  // // Настройка таймеров
+  // temperatureTicker.attach(60, sendTemperatureData); // Отправка данных о температурах каждые 60 секунд
+  // burnerStateTicker.attach(1, checkBurnerState); // Проверка состояния горелки каждую секунду
+
+
 }
 
 void controlBurner(bool state) {
@@ -226,30 +236,23 @@ void loop() {
 
   unsigned long current_time = millis(); // Get current time
  
-  if ((current_time - lastTime_burnerState) > timer_burnerState) {
+  // Проверяем, прошло ли burnerStateCheckInterval (1000) миллисекунд
+  if (current_time - lastBurnerStateCheckTime > burnerStateCheckInterval) { 
     // Serial.println(" ****************** ");
 /* 
     // int sensorValue = analogRead(sensorPin);  // Lecture de la valeur analogique
     // current = getCurrent(sensorValue);
     // bool curBurnerState = getBurnerState(current);
 
-    // Serial.print("sensorValue = ");
-    // Serial.print(sensorValue);
-    // Serial.print(", current = ");
-    // Serial.print(current);
-    // Serial.print(", burnerState = ");
-    // Serial.println(burnerState);
-
     // if (cnt > maxCnt) maxCnt = cnt;
 
-    // if (curBurnerState != burnerState) {
-    //   burnerState = curBurnerState;
-    //   Serial.print("Burner burnerState changed -> ");
-    //   Serial.println(burnerState);
-    //   // sendGetRequestBurnerStateChange(burnerState);
+    // if (curBurnerState != lastSignalPresent) {
+    //   lastSignalPresent = curBurnerState;
+    //   Serial.print("Burner lastSignalPresent changed -> ");
+    //   Serial.println(lastSignalPresent);
+    //   // sendGetRequestBurnerStateChange(lastSignalPresent);
     //   String url = "http://" + String(serverAddress) + ":" + String(serverPort) + String(endpointBurner);
-    //   url += "?burner=" + String(burnerState);
-    //   sendGetRequest(url);
+    //   url += "?burner=" + String(lastSignalPresent);
 
 
     // // Читаем состояние пина
@@ -270,33 +273,36 @@ void loop() {
  */
 
     
-    // Проверяем, прошло ли время с последнего прерывания
-    unsigned long diff_time = current_time - lastInterruptTime;
-    if (diff_time > timeout) {
-      printf("timeout -> current_time = %ld, diff = %ld, signalPresent = %d => false\n", current_time, diff_time, signalPresent);
-      signalPresent = false;  // Сбрасываем флаг, если сигнал исчез
+    // Проверяем, прошло ли больше времени, чем timeout с последнего прерывания
+    //unsigned long diff_time = current_time - lastInterruptTime;
+    // if ((current_time - lastInterruptTime) > timeout) {
+    if (signalPresent && (millis() - lastInterruptTime > timeout)) {        
+      //printf("timeout -> current_time = %ld, diff = %ld, signalPresent = %d => false\n", current_time, diff_time, signalPresent);
+      //Serial.printf("timeout -> current_time = %ld, diff = %ld, signalPresent = %d => false\n", current_time, diff_time, signalPresent);
+      
+      signalPresent = false; // Сбрасываем флаг, если сигнал исчез
     }
 
-    if (signalPresent != burnerState) {
-      digitalWrite(LED_02_PIN, LOW);
-      burnerState = signalPresent;
-      // Serial.print("signalPresent != burnerState -> current_time = "), Serial.print(current_time), Serial.print(", Burner state changed -> "), Serial.println(burnerState);
-      printf("signalPresent != burnerState -> current_time = %ld, Burner state changed -> %d\n", current_time, burnerState);
+    if (signalPresent != lastSignalPresent) {
+      digitalWrite(LED_02_PIN, LOW); // Turn the LED on
+      lastSignalPresent = signalPresent;
+      // Serial.print("signalPresent != lastSignalPresent -> current_time = "), Serial.print(current_time), Serial.print(", Burner state changed -> "), Serial.println(lastSignalPresent);
+      printf("signalPresent != lastSignalPresent -> current_time = %ld, Burner state changed -> %d\n", current_time, lastSignalPresent);
 
-      // Serial.print("signalPresent != burnerState -> current_time = ");
+      // Serial.print("signalPresent != lastSignalPresent -> current_time = ");
       // Serial.print(current_time);
       // Serial.print(", Burner state changed -> ");
-      // Serial.println(burnerState);
+      // Serial.println(lastSignalPresent);
 
       String url = "http://" + String(serverAddress) + ":" + String(serverPort) + String(endpointBurner);
-      url += "?burner_state=" + String(burnerState);
+      url += "?burner_state=" + String(lastSignalPresent);
       url += "&esp_time=" + String(current_time);
 
       // Serial.println(url);
       sendGetRequest(url);
-      // sendPostRequest((burnerState) ? "1" : "0");
+      // sendPostRequest((lastSignalPresent) ? "1" : "0");
       // signalPresent = false;
-      digitalWrite(LED_02_PIN, HIGH);
+      digitalWrite(LED_02_PIN, HIGH); // Turn the LED off
     }
 
 
@@ -321,33 +327,31 @@ void loop() {
 
     // Serial.println(" ----------------- ");
 
-    lastTime_burnerState = millis(); // Update lastTime
+    lastBurnerStateCheckTime = millis(); // Update lastTime
   }
 
 
-
-  if ((millis() - lastTime_temperature) > timer_temperature) {
+  // Отправка данных о температуре
+  if ((millis() - lastTemperatureUpdateTime) > timer_temperature) { // Если прошло timer_temperature (60) секунд
+  // if (false) {
     digitalWrite(LED_BUILTIN, LOW);  // Turn the LED on (Note that LOW is the voltage level)
     sensors.requestTemperatures();   // Send the command to get temperatures
 
-    tempRetour = readDSTemperatureC(0);
-    tempAller = readDSTemperatureC(1);
-    tempCuve = readDSTemperatureC(2);
+    tempRetour =  readDSTemperatureC(0);
+    tempAller =   readDSTemperatureC(1);
+    tempCuve =    readDSTemperatureC(2);
 
     // Отправляем температуру на сервер
     // sendGetRequestTemperature();
     String url = "http://" + String(serverAddress) + ":" + String(serverPort) + String(endpointTemp);
     url += "?tank=" + String(tempCuve) + "&direct=" + String(tempAller) + "&back=" + String(tempRetour);
-    // url += "&burner=" + String(burnerState);
 
     // float tempOut = getTempOut();
     // url += "&temp_out=" + String(tempOut);
-    
+
     sendGetRequest(url);
-
     digitalWrite(LED_BUILTIN, HIGH);  // Turn the LED off by making the voltage HIGH
-
-    lastTime_temperature = millis();
+    lastTemperatureUpdateTime = millis();
 
 
     time_t now = time(nullptr);
@@ -357,23 +361,27 @@ void loop() {
     Serial.printf("Current time: %02d:%02d\n", currentHour, currentMinute);
     Serial.printf("Current temperature: %s\n", tempCuve.c_str());
 
-    float currentTemperature = sensors.getTempCByIndex(2);
-    bool relayOn = false;
-    for (int i = 0; i < scheduleCount; i++) {
-      if (isInTimeRange(schedule[i], currentHour, currentMinute)) {
-        if (currentTemperature < schedule[i].minTemp) {
-          relayOn = true;
-          Serial.printf("currentTemperature=%f", currentTemperature);
-          Serial.printf("Current temperature is below minimum: %f\n", schedule[i].minTemp);
-        }
-        if (currentTemperature > schedule[i].maxTemp) {
-          relayOn = false;
-          Serial.printf("currentTemperature=%f", currentTemperature);
-          Serial.printf("Current temperature is above maximum: %f\n", schedule[i].maxTemp);
-        }
+    // Получение текущей температуры в котле
+    float currTempCuve = sensors.getTempCByIndex(TEMP_CUVE);
+    // Проверка, нужно ли включить горелку
+    bool newBurnerStatePlanned = shouldTurnOnBurner(currTempCuve, burnerStatePlanned);
+    // Управление реле горелки
+    if (newBurnerStatePlanned != burnerStatePlanned) {
+      burnerStatePlanned = newBurnerStatePlanned;
+      if (burnerStatePlanned) {
+        digitalWrite(relayPin, HIGH);  // Включаем реле
+        Serial.println("Burner ON");
+        // sendLogToServer("Burner ON");
+      } else {
+        digitalWrite(relayPin, LOW);   // Выключаем реле
+        Serial.println("Burner OFF");
+        // sendLogToServer("Burner OFF");
       }
     }
-    digitalWrite(relayPin, relayOn ? HIGH : LOW);
+    // digitalWrite(relayPin, relayOn ? HIGH : LOW);
 
   }
+
+  delay(1000); // Задержка для предотвращения перегрузки процессора
+
 }
