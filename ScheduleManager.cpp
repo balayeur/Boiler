@@ -88,6 +88,13 @@ bool shouldTurnOnBurner(float currentTemp, bool burnerState) {
 
   for (int i = 0; i < scheduleCount; i++) {
     if (isInTimeRange(schedule[i], currentHour, currentMinute)) {
+      Serial.printf("Текущее время %02d:%02d находится в интервале %02d:%02d - %02d:%02d\n",
+                    currentHour, currentMinute,
+                    schedule[i].startHour, schedule[i].startMinute,
+                    schedule[i].endHour, schedule[i].endMinute);
+      Serial.println("currentTemp = " + String(currentTemp)
+                    + ", minTemp = " + String(schedule[i].minTemp) 
+                    + ", maxTemp = " + String(schedule[i].maxTemp));
       if (currentTemp < schedule[i].minTemp && !burnerState) {
         return true; // Включить горелку
       } else if (currentTemp > schedule[i].maxTemp && burnerState) {

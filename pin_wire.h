@@ -2,12 +2,14 @@
 #define PIN_WIRE_H
 
 // Data wire is connected to GPIO 4
-#define ONE_WIRE_BUS    4
-#define BURNER_IN_PIN   5
-#define ADC_PIN         A0
+#define ONE_WIRE_BUS    4   // Пин для подключения датчиков температуры
+#define BURNER_IN_PIN   5   // Пин для чтения сигнала от горелки
+#define BURNER_OUT_PIN  3   // Пин для управления реле горелки 
+#define ADC_PIN         A0  
 
-#define LED_01_PIN      2
-#define LED_02_PIN      16
+
+#define LED_01_PIN      2   // Пин для светодиода
+#define LED_02_PIN      16  // Пин для светодиода
 
 
 // static const int pwmInputPin = BURNER_IN_PIN;
