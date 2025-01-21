@@ -27,7 +27,7 @@ extern HTTPClient http;
 extern String tempAller;
 extern String tempRetour;
 extern String tempCuve;
-extern bool burnerState;
+//extern bool burnerState;
 
 //local
 

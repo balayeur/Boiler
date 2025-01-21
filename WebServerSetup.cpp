@@ -26,10 +26,10 @@ void setupWebServer()
     String response = tempCuve + "," + tempAller + "," + tempRetour;
     request->send(200, "text/plain", response.c_str()); });
 
-  server.on("/burnerState", HTTP_GET, [](AsyncWebServerRequest *request)
-            {
-    String response = String(burnerState);
-    request->send(200, "text/plain", response.c_str()); });
+  // server.on("/burnerState", HTTP_GET, [](AsyncWebServerRequest *request)
+  //           {
+  //   String response = String(burnerState);
+  //   request->send(200, "text/plain", response.c_str()); });
 
   server.on("/setSchedule", HTTP_POST, [](AsyncWebServerRequest *request)
             {
@@ -48,6 +48,8 @@ void setupWebServer()
   server.on("/schedule", HTTP_GET, handleGetSchedule);
 
   server.on("/scheduleSet", HTTP_POST, [](AsyncWebServerRequest *request) {}, NULL, handleUpdateSchedule);
+
+
   // server.on("/scheduleSet", HTTP_POST, [](AsyncWebServerRequest *request) {
 
   //   Serial.println("Received POST request on /scheduleSet"); // Отладочное сообщение
@@ -88,6 +90,9 @@ void setupWebServer()
   //     request->send(400, "text/plain", "Unsupported content type");
   //   }
   // });
+
+
+
 
   // // Обработка POST-запроса
   // server.on("/scheduleSet", HTTP_POST,
