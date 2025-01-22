@@ -15,9 +15,16 @@
 extern const char* serverAddress;
 extern const int serverPort;
 extern const char* endpointTemp;
+extern const char* endpointBurner;
+
+extern const unsigned long timeout; // Declare timeout variable
+extern bool lastSignalPresent;      // Declare lastSignalPresent variable
+
 
 // extern bool burnerState;
 
+// void isBurnerStateChanged(bool signalPresent, unsigned long lastInterruptTime);
+void isBurnerStateChanged(volatile bool &signalPresent, unsigned long lastInterruptTime); //, unsigned long current_time);
 
 void sendTemperatureData(); // Отправка температур на сервер
 void checkBurnerState();    //  Проверка, нужно ли включить горелку

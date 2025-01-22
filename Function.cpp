@@ -3,6 +3,32 @@
 
 bool burnerStatePlanned = false;        // Планируемое состояние горелки
 
+void isBurnerStateChanged(volatile bool &signalPresent, 
+                          unsigned long lastInterruptTime)
+                         // , unsigned long current_time) 
+{
+  // Проверяем, прошло ли больше времени, чем timeout с последнего прерывания
+  if (signalPresent && (millis() - lastInterruptTime > timeout)) {        
+    signalPresent = false; // Сбрасываем флаг, если сигнал исчез
+  }
+
+  if (signalPresent != lastSignalPresent) 
+  {
+    digitalWrite(LED_02_PIN, LOW); // Turn the LED on
+    lastSignalPresent = signalPresent;
+    Serial.println("Burner state changed: " + String(lastSignalPresent) + " -> " + String(signalPresent));
+    // printf("signalPresent != lastSignalPresent -> current_time = %ld, 
+    //       Burner state changed -> %d\n", millis(), lastSignalPresent);
+
+    String url = "http://" + String(serverAddress) + ":" + String(serverPort) + String(endpointBurner);
+    url += "?burner_state=" + String(lastSignalPresent);
+
+    sendGetRequest(url);
+
+    digitalWrite(LED_02_PIN, HIGH); // Turn the LED off
+  }
+}
+
 
 // Отправка температур на сервер
 void sendTemperatureData() {
@@ -71,3 +97,93 @@ void synchronizeTime() {
            &timeinfo); // Форматируем время
   Serial.println(timeStringBuff); // Вывод форматированной строки времени
 }
+
+
+//  // Serial.println(" ****************** ");
+// /* 
+//     // int sensorValue = analogRead(sensorPin);  // Lecture de la valeur analogique
+//     // current = getCurrent(sensorValue);
+//     // bool curBurnerState = getBurnerState(current);
+
+//     // if (cnt > maxCnt) maxCnt = cnt;
+
+//     // if (curBurnerState != lastSignalPresent) {
+//     //   lastSignalPresent = curBurnerState;
+//     //   Serial.print("Burner lastSignalPresent changed -> ");
+//     //   Serial.println(lastSignalPresent);
+//     //   // sendGetRequestBurnerStateChange(lastSignalPresent);
+//     //   String url = "http://" + String(serverAddress) + ":" + String(serverPort) + String(endpointBurner);
+//     //   url += "?burner=" + String(lastSignalPresent);
+
+
+//     // // Читаем состояние пина
+//     // int pwmState = digitalRead(BURNER_IN_PIN);
+//     // // pwmInputPin
+//     // // Проверяем состояние сигнала PWM
+//     // if (pwmState == HIGH) {
+//     //   Serial.println("1 - Сигнал PWM присутствует");
+//     // } else {
+//     //   Serial.println("1 - Сигнал PWM отсутствует");
+//     // }
+
+//     // if (signalPresent) {
+//     //   Serial.println("PWM signal is present");
+//     // } else {
+//     //   Serial.println("PWM signal is absent");
+//     // }
+//  */
+
+    
+//     // Проверяем, прошло ли больше времени, чем timeout с последнего прерывания
+//     //unsigned long diff_time = current_time - lastInterruptTime;
+//     // if ((current_time - lastInterruptTime) > timeout) {
+//     if (signalPresent && (millis() - lastInterruptTime > timeout)) {        
+//       //printf("timeout -> current_time = %ld, diff = %ld, signalPresent = %d => false\n", current_time, diff_time, signalPresent);
+//       //Serial.printf("timeout -> current_time = %ld, diff = %ld, signalPresent = %d => false\n", current_time, diff_time, signalPresent);
+      
+//       signalPresent = false; // Сбрасываем флаг, если сигнал исчез
+//     }
+
+//     if (signalPresent != lastSignalPresent) {
+//       digitalWrite(LED_02_PIN, LOW); // Turn the LED on
+//       lastSignalPresent = signalPresent;
+//       // Serial.print("signalPresent != lastSignalPresent -> current_time = "), Serial.print(current_time), Serial.print(", Burner state changed -> "), Serial.println(lastSignalPresent);
+//       printf("signalPresent != lastSignalPresent -> current_time = %ld, Burner state changed -> %d\n", current_time, lastSignalPresent);
+
+//       // Serial.print("signalPresent != lastSignalPresent -> current_time = ");
+//       // Serial.print(current_time);
+//       // Serial.print(", Burner state changed -> ");
+//       // Serial.println(lastSignalPresent);
+
+//       String url = "http://" + String(serverAddress) + ":" + String(serverPort) + String(endpointBurner);
+//       url += "?burner_state=" + String(lastSignalPresent);
+//       url += "&esp_time=" + String(current_time);
+
+//       // Serial.println(url);
+//       sendGetRequest(url);
+//       // sendPostRequest((lastSignalPresent) ? "1" : "0");
+//       // signalPresent = false;
+//       digitalWrite(LED_02_PIN, HIGH); // Turn the LED off
+//     }
+
+
+//     // unsigned long pulseDuration = 0;      //pulseIn(BURNER_IN_PIN, LOW);  // Измеряем длительность импульса
+//     // unsigned long pulseLongDuration = 0;  //pulseInLong(BURNER_IN_PIN, LOW);  // Измеряем длительность импульса
+
+//     // if ((pulseDuration > 0) || (pulseLongDuration > 0)) {
+//     //   Serial.print("Сигнал PWM присутствует. Длительность импульса (мкс): ");
+//     //   Serial.print(pulseDuration);
+//     //   Serial.print(", long импульса (мкс): ");
+//     //   Serial.println(pulseLongDuration);
+//     //   cnt = 0;
+//     // } else {
+//     //   cnt++;
+//     //   Serial.print("Сигнал PWM отсутствует, cnt = ");
+//     //   Serial.print(cnt);
+//     //   Serial.print(", maxCnt = ");
+//     //   Serial.println(maxCnt);
+//     // }
+
+
+
+//     // Serial.println(" ----------------- ");
