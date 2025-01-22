@@ -7,7 +7,6 @@ DallasTemperature sensors(&oneWire);
 
 void setupDevices()
 {
-
   // pinMode(BURNER_IN_PIN, INPUT_PULLUP);
   // pinMode(BURNER_IN_PIN, INPUT);
 
@@ -35,9 +34,11 @@ void setupDevices()
     }
   }
 
-  tempRetour =  readDSTemperatureC(TEMP_RETOUR);
-  tempAller =   readDSTemperatureC(TEMP_ALLER);
-  tempCuve =    readDSTemperatureC(TEMP_CUVE);
+  if(numberOfDevices > 0) {
+    tempRetour =  readDSTemperatureC(TEMP_RETOUR);
+    tempAller =   readDSTemperatureC(TEMP_ALLER);
+    tempCuve =    readDSTemperatureC(TEMP_CUVE);
+  }
 
   //   int sensorValue = analogRead(sensorPin);  // Lecture de la valeur analogique
   //   current = getCurrent(sensorValue);
