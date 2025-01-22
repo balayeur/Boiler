@@ -3,52 +3,191 @@
 // Create AsyncWebServer object on port 80
 AsyncWebServer server(80);
 
+size_t scheduleSize = 0;    // Количество записей в расписании
+
 WiFiClient client;
 HTTPClient http;
 
-const char* serverName = "http://148.179.79.9/post-esp-data.php";
+const char *serverName = "http://148.179.79.9/post-esp-data.php";
 String apiKeyValue = "tPmAT5Ab3j7F9";
 
-const char* openWeatherMapApiKey = "a099a62fc75955cabbeabceb3f046712";
-const char* openWeatherMapCity = "tours";
-const char* openWeatherMapUnits = "metric"; // Use "imperial" for Fahrenheit
+const char *openWeatherMapApiKey = "a099a62fc75955cabbeabceb3f046712";
+const char *openWeatherMapCity = "tours";
+const char *openWeatherMapUnits = "metric"; // Use "imperial" for Fahrenheit
 
-void setupWebServer() {
+void setupWebServer()
+{
   // Route for root / web page
-  server.on("/", HTTP_GET, [](AsyncWebServerRequest* request) {
-    request->send_P(200, "text/html", index_html, processor);
-  });
+  server.on("/", HTTP_GET, [](AsyncWebServerRequest *request)
+            { request->send_P(200, "text/html", index_html, processor); });
 
-  server.on("/temperature", HTTP_GET, [](AsyncWebServerRequest* request) {
+  server.on("/temperature", HTTP_GET, [](AsyncWebServerRequest *request)
+            {
     String response = tempCuve + "," + tempAller + "," + tempRetour;
-    request->send(200, "text/plain", response.c_str());
-  });
+    request->send(200, "text/plain", response.c_str()); });
 
-  server.on("/burnerState", HTTP_GET, [](AsyncWebServerRequest* request) {
-    String response = String(burnerState);
-    request->send(200, "text/plain", response.c_str());
-  });
+  // server.on("/burnerState", HTTP_GET, [](AsyncWebServerRequest *request)
+  //           {
+  //   String response = String(burnerState);
+  //   request->send(200, "text/plain", response.c_str()); });
+
+  server.on("/setSchedule", HTTP_POST, [](AsyncWebServerRequest *request)
+            {
+    String startTime = request->getParam("startTime", true)->value();
+    String endTime = request->getParam("endTime", true)->value();
+    int minTemp = request->getParam("minTemp", true)->value().toInt();
+    int maxTemp = request->getParam("maxTemp", true)->value().toInt();
+
+    // Сохраните расписание и температуры в переменные или EEPROM
+
+    request->send(200, "text/plain", "Schedule set"); });
+
+  server.on("/scheduler", HTTP_GET, [](AsyncWebServerRequest *request)
+            { request->send(LittleFS, "/scheduler.html", "text/html"); });
+
+  server.on("/schedule", HTTP_GET, handleGetSchedule);
+
+  server.on("/scheduleSet", HTTP_POST, [](AsyncWebServerRequest *request) {}, NULL, handleUpdateSchedule);
+
+
+  // server.on("/scheduleSet", HTTP_POST, [](AsyncWebServerRequest *request) {
+
+  //   Serial.println("Received POST request on /scheduleSet"); // Отладочное сообщение
+
+  //   if (request->contentType() == "application/json") {
+  //     String body = "";
+  //     request->onRequestBody([&body](AsyncWebServerRequest *request, uint8_t *data, size_t len, size_t index, size_t total) {
+  //       body += String((char*)data).substring(0, len);
+  //       if (index + len == total) {
+  //         Serial.println("Request body: " + body); // Отладочное сообщение
+
+  //         StaticJsonDocument<1024> doc;
+  //         DeserializationError error = deserializeJson(doc, body);
+  //         if (error) {
+  //           request->send(400, "text/plain", "Invalid JSON");
+  //           return;
+  //         }
+
+  //         scheduleCount = 0;
+  //         for (JsonObject item : doc.as<JsonArray>()) {
+  //           schedule[scheduleCount].startHour = item["startHour"];
+  //           schedule[scheduleCount].startMinute = item["startMinute"];
+  //           schedule[scheduleCount].endHour = item["endHour"];
+  //           schedule[scheduleCount].endMinute = item["endMinute"];
+  //           schedule[scheduleCount].minTemp = item["minTemp"];
+  //           schedule[scheduleCount].maxTemp = item["maxTemp"];
+  //           scheduleCount++;
+  //         }
+
+  //         if (saveSchedule()) {
+  //           request->send(200, "text/plain", "Schedule updated");
+  //         } else {
+  //           request->send(500, "text/plain", "Failed to save schedule");
+  //         }
+  //       }
+  //     });
+  //   } else {
+  //     request->send(400, "text/plain", "Unsupported content type");
+  //   }
+  // });
+
+
+
+
+  // // Обработка POST-запроса
+  // server.on("/scheduleSet", HTTP_POST,
+  //           [](AsyncWebServerRequest *request) {}, 
+  //           NULL, 
+  //           [](AsyncWebServerRequest *request, uint8_t *data, size_t len, size_t index, size_t total)
+  // {
+  //   static String jsonData;
+  //   if (index == 0) {
+  //     jsonData = "";
+  //   }
+
+  //   jsonData += String((char*)data).substring(0, len);
+  //   if (index + len == total) {
+  //     Serial.println("Received POST request on /scheduleSet"); // Отладочное сообщение
+  //     Serial.println("Received data:");
+  //     Serial.println(jsonData);
+
+  //     // Создаем JSON-документ достаточного размера для данных
+  //     StaticJsonDocument<1024> doc;
+
+  //     // Парсинг входящего JSON
+  //     DeserializationError error = deserializeJson(doc, jsonData);
+  //     if (error) {
+  //       Serial.print("JSON parse error: ");
+  //       Serial.println(error.c_str());
+  //       request->send(400, "application/json", "{\"error\":\"Invalid JSON\"}");
+  //       return;
+  //     }
+
+  //     // Очистка старого расписания
+  //     scheduleSize = 0;
+
+  //     // Чтение данных из JSON-массива
+  //     JsonArray array = doc.as<JsonArray>();
+  //     for (JsonObject obj : array) {
+  //       if (scheduleSize >= 10) break; // Ограничение на размер массива
+
+  //       schedule[scheduleSize].startHour = obj["startHour"];
+  //       schedule[scheduleSize].startMinute = obj["startMinute"];
+  //       schedule[scheduleSize].endHour = obj["endHour"];
+  //       schedule[scheduleSize].endMinute = obj["endMinute"];
+  //       schedule[scheduleSize].minTemp = obj["minTemp"];
+  //       schedule[scheduleSize].maxTemp = obj["maxTemp"];
+
+  //       scheduleSize++;
+  //     }
+
+  //     // Подтверждение успешного получения данных
+  //     request->send(200, "application/json", "{\"status\":\"Schedule saved\"}");
+
+  //     // Отладка: вывод расписания в сериал
+  //     Serial.println("Received schedule:");
+  //     for (size_t i = 0; i < scheduleSize; i++) {
+  //       Serial.printf("Entry %d: %02d:%02d - %02d:%02d, MinTemp: %.1f, MaxTemp: %.1f\n",
+  //                     i + 1,
+  //                     schedule[i].startHour, schedule[i].startMinute,
+  //                     schedule[i].endHour, schedule[i].endMinute,
+  //                     schedule[i].minTemp, schedule[i].maxTemp);
+  //     }
+
+  //     // Clear jsonData after processing
+  //     jsonData = "";
+  //   }
+  // });
 
   // Start server
   server.begin();
 }
 
-String processor(const String& var) {
-  if (var == "TEMP_TANK") {
+// Function to replace placeholder with variable content
+String processor(const String &var)
+{
+  if (var == "TEMP_TANK")
+  {
     return tempCuve;
-  } else if (var == "TEMP_DIRECT") {
+  }
+  else if (var == "TEMP_DIRECT")
+  {
     return tempAller;
-  } else if (var == "TEMP_BACK") {
+  }
+  else if (var == "TEMP_BACK")
+  {
     return tempRetour;
   }
   return String();
 }
 
-float getTempOut() {
+float getTempOut()
+{
   float temperature = 0.0;
 
   // Check WiFi connection status
-  if (WiFi.status() == WL_CONNECTED) {
+  if (WiFi.status() == WL_CONNECTED)
+  {
 
     // // Send HTTP GET request
     // HTTPClient http;
@@ -61,7 +200,8 @@ float getTempOut() {
     // http.begin(apiUrl);
     // int httpResponseCode = http.GET();
 
-    if (httpResponseCode > 0) {
+    if (httpResponseCode > 0)
+    {
       // If successful response, get the temperature from the JSON response
       String payload = http.getString();
       // Parse the JSON response to extract the temperature
@@ -80,7 +220,8 @@ float getTempOut() {
       DeserializationError error = deserializeJson(jsonBuffer, payload);
 
       // Проверяем на ошибки парсинга
-      if (error) {
+      if (error)
+      {
         Serial.print("Parsing failed: ");
         Serial.println(error.c_str());
         return -999;
@@ -96,29 +237,53 @@ float getTempOut() {
       Serial.print("Humidity: ");
       Serial.println(humidity);
 
-
       // // Append the temperature to the URL
       // url += "&temperature=" + String(temperature);
       // Serial.println("Temperature added to URL: " + url);
-    } else {
+    }
+    else
+    {
       Serial.println("Error getting temperature data from OpenWeatherMap");
     }
 
     // Free resources
     http.end();
-
-  } else {
+  }
+  else
+  {
     Serial.println("WiFi Disconnected");
   }
 
   return temperature;
+
+  //   apiUrl += String(openWeatherMapCity) + "&appid=" + String(openWeatherMapApiKey) + "&units=" + String(openWeatherMapUnits);
+
+  //   http.begin(client, apiUrl);
+  //   int httpCode = http.GET();
+
+  //   if (httpCode > 0) {
+  //     String payload = http.getString();
+  //     Serial.println(payload);
+
+  //     StaticJsonDocument<1024> doc;
+  //     DeserializationError error = deserializeJson(doc, payload);
+
+  //     if (!error) {
+  //       temperature = doc["main"]["temp"];
+  //     }
+  //   }
+
+  //   http.end();
+  // }
+
+  // return temperature;
 }
 
-
-
-
-void handleHTTPResponse(int httpResponseCode) {
-  if (httpResponseCode > 0) {
+// Обработка HTTP ответа
+void handleHTTPResponse(int httpResponseCode)
+{
+  if (httpResponseCode > 0)
+  {
     Serial.print("HTTP Response code: ");
     Serial.print(httpResponseCode);
 
@@ -126,7 +291,9 @@ void handleHTTPResponse(int httpResponseCode) {
     String payload = http.getString();
     Serial.print("; Server response: ");
     Serial.println(payload);
-  } else {
+  }
+  else
+  {
     Serial.print("Error sending request! HTTP Error code: ");
     Serial.println(httpResponseCode);
     // Записываем сообщение об ошибке в журнал
@@ -135,9 +302,11 @@ void handleHTTPResponse(int httpResponseCode) {
 }
 
 // method GET
-void sendGetRequest(String url) {
-  //Check WiFi connection status
-  if (WiFi.status() == WL_CONNECTED) {
+void sendGetRequest(String url)
+{
+  // Check WiFi connection status
+  if (WiFi.status() == WL_CONNECTED)
+  {
 
     Serial.println("url: " + url);
 
@@ -149,15 +318,19 @@ void sendGetRequest(String url) {
 
     // Free resources
     http.end();
-  } else {
+  }
+  else
+  {
     Serial.println("WiFi Disconnected");
   }
 }
 
 // method POST
-void sendPostRequest(String _burner_state) {
-  //Check WiFi connection status
-  if (WiFi.status() == WL_CONNECTED) {
+void sendPostRequest(String _burner_state)
+{
+  // Check WiFi connection status
+  if (WiFi.status() == WL_CONNECTED)
+  {
 
     // Your Domain name with URL path or IP address with path
     http.begin(client, serverName);
@@ -166,9 +339,7 @@ void sendPostRequest(String _burner_state) {
     http.addHeader("Content-Type", "application/x-www-form-urlencoded");
 
     // Prepare your HTTP POST request data
-    String httpRequestData = "api_key=" + apiKeyValue
-                             + "&burner_state=" + _burner_state
-                             + "";
+    String httpRequestData = "api_key=" + apiKeyValue + "&burner_state=" + _burner_state + "";
     //  + "&location=" + sensorLocation
     //  + "&value1=" + String(bme.readTemperature())
     //  + "&value2=" + String(bme.readHumidity())
@@ -185,7 +356,9 @@ void sendPostRequest(String _burner_state) {
 
     // Free resources
     http.end();
-  } else {
+  }
+  else
+  {
     Serial.println("WiFi Disconnected !!!");
   }
 }

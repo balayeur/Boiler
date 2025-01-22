@@ -35,9 +35,9 @@ void setupDevices()
     }
   }
 
-  tempRetour = readDSTemperatureC(0);
-  tempAller = readDSTemperatureC(1);
-  tempCuve = readDSTemperatureC(2);
+  tempRetour =  readDSTemperatureC(TEMP_RETOUR);
+  tempAller =   readDSTemperatureC(TEMP_ALLER);
+  tempCuve =    readDSTemperatureC(TEMP_CUVE);
 
   //   int sensorValue = analogRead(sensorPin);  // Lecture de la valeur analogique
   //   current = getCurrent(sensorValue);

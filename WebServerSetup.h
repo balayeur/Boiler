@@ -14,6 +14,7 @@
 #include <ESPAsyncWebServer.h>
 #include <ESP8266HTTPClient.h>
 #include "WebPage.h"
+#include "ScheduleManager.h"
 // #include "log.h"
 // #include <ESPAsyncTCP.h>
 
@@ -26,17 +27,16 @@ extern HTTPClient http;
 extern String tempAller;
 extern String tempRetour;
 extern String tempCuve;
-extern bool burnerState;
+//extern bool burnerState;
 
 //local
 
 
-
-String processor(const String& var);
+String processor(const String& var); // Function to replace placeholder with variable content
 
 void setupWebServer();
 
-float getTempOut();
+float getTempOut(); // Get the temperature from OpenWeatherMap
 
 void sendGetRequest(String url);
 void sendPostRequest(String url);

@@ -140,6 +140,9 @@ const char index_html[] PROGMEM = R"rawliteral(
     <span id="burnerStateText">Burner State</span>
   </div>
 
+  <h1>Boiler Control</h1>
+  <p><a href="/scheduler">Go to Scheduler</a></p>
+
 
   <!-- Chart canvase -->
   <canvas id="temperatureChart" width="400" height="200"></canvas>
@@ -148,6 +151,21 @@ const char index_html[] PROGMEM = R"rawliteral(
   <!-- <canvas id="temperatureChart0" width="400" height="200"></canvas> -->
   <!-- <canvas id="temperatureChart1" width="400" height="200"></canvas> -->
   <!-- <canvas id="temperatureChart2" width="400" height="200"></canvas> -->
+
+
+  
+  <h1>Boiler Control</h1>
+  <form action="/setSchedule" method="POST">
+    <label for="startTime">Start Time:</label>
+    <input type="time" id="startTime" name="startTime"><br><br>
+    <label for="endTime">End Time:</label>
+    <input type="time" id="endTime" name="endTime"><br><br>
+    <label for="minTemp">Min Temperature:</label>
+    <input type="number" id="minTemp" name="minTemp"><br><br>
+    <label for="maxTemp">Max Temperature:</label>
+    <input type="number" id="maxTemp" name="maxTemp"><br><br>
+    <input type="submit" value="Set Schedule">
+  </form>
 
 </body>
 
