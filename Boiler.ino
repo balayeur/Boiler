@@ -96,56 +96,38 @@ void ICACHE_RAM_ATTR handleInterrupt() {  // Обработчик прерыва
 
 // SETUP ----------------------------------------------------------
 void setup() {
-  pinMode(LED_BUILTIN, OUTPUT); // led ON
-  pinMode(LED_02_PIN, OUTPUT);  // led ON
+
+  
+  pinMode(LED_BUILTIN, OUTPUT); // Initialize the LED_BUILTIN pin as an output
+  pinMode(LED_02_PIN, OUTPUT);  // Initialize the LED_02_PIN pin as an output
 
   pinMode(BURNER_OUT_PIN, OUTPUT);    // Устанавливаем пин для управления реле
-  digitalWrite(BURNER_OUT_PIN, LOW);  // Выключаем реле по умолчанию
+  digitalWrite(BURNER_OUT_PIN, LOW);  // Выключаем реле горелки по умолчанию
 
   // pinMode(A0, INPUT);
   // pinMode(ADC_PIN, INPUT);
   // pinMode(sensorPin, INPUT);
-
+  
   // Serial port for debugging purposes
   Serial.begin(115200);
-  Serial.println();
+  delay(3000); // Give some time to the serial monitor
+  Serial.println(""); // Print a blank line
+  Serial.println("Serial port started with 115200 baud");
 
-  synchronizeTime(); // Синхронизируем время
-
-  if (!LittleFS.begin()) { // Инициализация файловой системы
-    Serial.println("Ошибка монтирования LittleFS");
-    return;
-  }
-
-  loadSchedule(); // Загружаем расписание
 
 #ifdef TEST_ENV
-    Serial.println("Работа в тестовой среде.");
-    endpointTemp = endpointTempTest;
-    endpointBurner = endpointBurnerTest;
+  Serial.println("Работа в тестовой среде.");
+  endpointTemp = endpointTempTest;
+  endpointBurner = endpointBurnerTest;
 #else
-    Serial.println("Работа в рабочей среде.");
-    endpointTemp = endpointTempMain;
-    endpointBurner = endpointBurnerMain;
+  Serial.println("Работа в рабочей среде.");
+  endpointTemp = endpointTempMain;
+  endpointBurner = endpointBurnerMain;
 #endif
 
-    // Выводим выбранные endpoint
-    Serial.print("Используется endpointTemp: ");
-    Serial.println(endpointTemp);
-    Serial.print("Используется endpointBurner: ");
-    Serial.println(endpointBurner);
-
-
-  setupDevices();
-
-  pinMode(BURNER_IN_PIN, INPUT);
-  // Настраиваем вход с подтягивающим резистором
-  // pinMode(BURNER_IN_PIN, INPUT_PULLUP);                                            
-  // Настраиваем прерывания на фронт сигнала
-  // attachInterrupt(digitalPinToInterrupt(BURNER_IN_PIN), handleInterrupt, RISING);
-  attachInterrupt(digitalPinToInterrupt(BURNER_IN_PIN), handleInterrupt, HIGH);
-  // Настраиваем прерывания на изменение состояния пина
-  // attachInterrupt(digitalPinToInterrupt(BURNER_IN_PIN), handleInterrupt, CHANGE);  
+  // Выводим выбранные endpoint
+  Serial.println("Используется endpointTemp: "   + String(endpointTemp));
+  Serial.println("Используется endpointBurner: " + String(endpointBurner));
 
 
   // Connect to Wi-Fi
@@ -159,9 +141,29 @@ void setup() {
 
   // Print ESP Local IP Address
   Serial.println("IP address: " + WiFi.localIP().toString());
-  Serial.print("IP address: ");
-  Serial.println(WiFi.localIP().toString());
   // printf("IP address: %s\n", WiFi.localIP().toString().c_str());
+
+
+  if (LittleFS.begin()) { // Инициализация файловой системы
+    Serial.println("LittleFS монтирована");
+  } else {
+    Serial.println("Ошибка монтирования LittleFS");
+    return;
+  }
+  loadSchedule(); // Загружаем расписание
+
+  synchronizeTime(); // Синхронизируем время
+
+  setupDevices();
+
+  pinMode(BURNER_IN_PIN, INPUT);
+  // Настраиваем вход с подтягивающим резистором
+  // pinMode(BURNER_IN_PIN, INPUT_PULLUP);                                            
+  // Настраиваем прерывания на фронт сигнала
+  // attachInterrupt(digitalPinToInterrupt(BURNER_IN_PIN), handleInterrupt, RISING);
+  attachInterrupt(digitalPinToInterrupt(BURNER_IN_PIN), handleInterrupt, HIGH);
+  // Настраиваем прерывания на изменение состояния пина
+  // attachInterrupt(digitalPinToInterrupt(BURNER_IN_PIN), handleInterrupt, CHANGE);  
 
 
   setupWebServer(); // Запускаем веб-сервер
@@ -189,7 +191,7 @@ void loop() {
 
   // Если прошло timer_temperature (60) секунд с последнего обновления температуры
   if ((millis() - lastTemperatureUpdateTime) > timer_temperature) {
-    sendTemperatureData();  // Отправляем данные о температуре на сервер
+    // sendTemperatureData();  // Отправляем данные о температуре на сервер
     lastTemperatureUpdateTime = millis();
     checkBurnerState();     // Проверяем, нужно ли включить горелку
   }
