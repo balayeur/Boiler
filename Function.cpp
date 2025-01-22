@@ -62,6 +62,11 @@ void checkBurnerState() {
   float currTempCuve = sensors.getTempCByIndex(TEMP_CUVE);
   // Проверка, нужно ли включить горелку
   bool newBurnerStatePlanned = shouldTurnOnBurner(currTempCuve, burnerStatePlanned);
+  if (!newBurnerStatePlanned) {
+    Serial.println("Не найден в пределах расписания");
+  } else {
+    //Serial.println("Burner state: ON");
+  }
   // Управление реле горелки
   if (newBurnerStatePlanned != burnerStatePlanned) {
     burnerStatePlanned = newBurnerStatePlanned;
