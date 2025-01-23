@@ -4,7 +4,7 @@
 // Data wire is connected to GPIO 4
 #define ONE_WIRE_BUS    4   // Пин для подключения датчиков температуры
 #define BURNER_IN_PIN   5   // Пин для чтения сигнала от горелки
-#define BURNER_OUT_PIN  3   // Пин для управления реле горелки 
+#define BURNER_OUT_PIN  14  // Пин для управления реле горелки 
 #define ADC_PIN         A0  
 
 
@@ -35,23 +35,26 @@
 // static const uint8_t D9   = 3;
 // static const uint8_t D10  = 1;
 
+// ESP8266 12-E NodeMCU Kit
+// The ESP8266 12-E NodeMCU kit pinout diagram is shown below
+
 //              ┌────────┐
-//        ADC0  |A0    30|  GPIO15 (D8) 
-//    RESERVED  |RSV   29|  GPIO13 (D7) 
-//    RESERVED  |RSV   28|  GPIO12 (D6) 
-//      GPIO10  |SD3   27|  GPIO14 (D5) 
-//       GPIO9  |SD2  26|  GPIO2 (D4) 
-//        MOSI  |SD1    25|  GPIO0 (D3) 
-//          CS  |CMD    24|  GPIO4 (D2) 
-//   (RST) 3V3  |8    23|  GPIO5 (D1) 
-//  GPIO9 (SD3) |9    22|  GPIO3 (TX) 
-// GPIO11 (SD1) |10   21|  GPIO1 (RX) 
-//  GPIO6 (SD0) |11   20|  GPIO16 (D0) 
-//         GND  |12   19|  (A0) A0 
-//         VIN  |13   18|  (A0) GND 
-//        GPIO7 |14   17|  (A0) 3V3 
-//        GPIO8 |15   16|  RST
-//              └───────┘
+//        ADC0  |A0    D0|  GPIO16  WAKE 
+//    RESERVED  |RSV   D1|  GPIO5   SCL 
+//    RESERVED  |RSV   D2|  GPIO4   SDA 
+// SDD3 GPIO10  |SD3   D3|  GPIO0   FLASH 
+// SDD2  GPIO9  |SD2   D4|  GPIO2   TXD1
+// SDD1   MISO  |SD1  3V3|  3V3
+// SDCMD    CS  |CMD  GND|  GND 
+// SDD0   MISO  |SDD   D5|  GPIO14  SCLK 
+// SDCLK  SCLK  |CLK   D6|  GPIO12  MISO 
+//         GND  |GND   D7|  GPIO13  MOSI RXD2
+//         3V3  |3V3   D8|  GPIO15  CS   TXD2 
+//          EN  |EN    RX|  GPIO3   RXD0 
+//         RST  |RST   TX|  GPIO1   TXD0 
+//         GND  |GND  GND|  GND 
+//         VIN  |VIN  3V3|  3V3
+//              └────────┘
 
 
 #endif
