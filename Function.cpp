@@ -62,6 +62,11 @@ void checkBurnerState() {
   float currTempCuve = sensors.getTempCByIndex(TEMP_CUVE);
   // Проверка, нужно ли включить горелку
   bool newBurnerStatePlanned = shouldTurnOnBurner(currTempCuve, burnerStatePlanned);
+  if (!newBurnerStatePlanned) {
+    Serial.println("Не найден в пределах расписания");
+  } else {
+    //Serial.println("Burner state: ON");
+  }
   // Управление реле горелки
   if (newBurnerStatePlanned != burnerStatePlanned) {
     burnerStatePlanned = newBurnerStatePlanned;
@@ -86,12 +91,21 @@ void synchronizeTime() {
   configTime(gmtOffset_sec, daylightOffset_sec, ntpServer); // Устанавливаем время с NTP сервера 
 
   struct tm timeinfo;
-  if (!getLocalTime(&timeinfo)) { // Получаем время
-    Serial.println("Failed to obtain time");
+  int attempts = 0;
+  const int maxAttempts = 5;
+
+  while (!getLocalTime(&timeinfo) && attempts < maxAttempts) { // Получаем время
+    Serial.println("Failed to obtain time, retrying...");
+    attempts++;
+    delay(2000); // Задержка перед повторной попыткой
+  }
+
+  if (attempts == maxAttempts) {
+    Serial.println("Failed to obtain time after multiple attempts");
     return;
   }
 
-  char timeStringBuff[50]; // Буфер для форматированной строки времени
+  char timeStringBuff[70]; // Буфер для форматированной строки времени
   strftime(timeStringBuff, sizeof(timeStringBuff),
            "Time synchronized: %A, %B %d %Y %H:%M:%S",
            &timeinfo); // Форматируем время
